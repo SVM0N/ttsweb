@@ -54,7 +54,32 @@ This project provides Jupyter notebooks that:
 ## 🚀 Getting Started
 
 ### Text-to-Speech (TTS)
-#### RECOMMENDED
+
+#### NEW: Command Line Interface (CLI) 🖥️ **EASIEST FOR LOCAL USE**
+**The fastest way to convert text/PDFs to speech locally is with the interactive CLI:**
+
+```bash
+# Clone the repository
+git clone https://github.com/SVM0N/ttsweb.git
+cd ttsweb
+
+# Run the CLI
+python3 tts_cli.py
+```
+
+**Features:**
+- ✨ **Interactive menu**: Easy number-based navigation
+- 🎯 **7 TTS models**: Kokoro, Qwen3-TTS (3 variants), Maya1, Silero
+- 📄 **4 PDF extractors**: Choose based on your needs
+- 🚀 **Auto-install dependencies**: Only installs what you need
+- 💾 **No coding required**: Just follow the prompts
+- 🔄 **Full control**: Configure everything via menus
+
+See [CLI_USAGE.md](CLI_USAGE.md) for detailed CLI documentation.
+
+---
+
+#### RECOMMENDED FOR NOTEBOOKS
 **The easiest way to convert text/PDFs to speech is with the unified TTS notebook:**
 
 #### Option 1: Google Colab (No Installation Required) 🌐
