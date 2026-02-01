@@ -338,6 +338,9 @@ wav_bytes, timeline = tts.synthesize_text_to_wav(elements, voice="af_heart")
 - **Kokoro v1.0** (54 voices, 8 languages, latest)
 - **Maya1** (20+ emotions, natural language voices, expressive, GPU required)
 - **Silero v5** (Russian, 6 speakers)
+- **Qwen3-TTS Custom Voice** (10 languages, pre-configured speakers, voice cloning)
+- **Qwen3-TTS Voice Design** (natural language voice descriptions, 10 languages)
+- **Qwen3-TTS Base** (3-second voice cloning, multilingual)
 
 **Supported PDF Extractors:**
 - Unstructured (advanced layout analysis)
@@ -355,6 +358,38 @@ wav_bytes, timeline = tts.synthesize_text_to_wav(elements, voice="af_heart")
 **Cons:**
 - Requires all module files (tts_backends.py, pdf_extractors.py, etc.)
 - Maya1 requires GPU with 16GB+ VRAM
+
+---
+
+### **Qwen3-TTS Model Details** 🌍 **MULTILINGUAL TTS**
+
+**What makes Qwen3-TTS special:**
+- **10 languages**: Chinese, English, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian
+- **3-second voice cloning**: Clone any voice with just 3 seconds of clear audio
+- **Natural language voice descriptions**: Describe voices in plain English like "A young female voice, cheerful and energetic"
+- **Multiple variants**: Custom Voice (pre-configured speakers), Voice Design (custom descriptions), Base (voice cloning)
+- **Apache 2.0 license**: Fully open-source
+
+**Requirements:**
+- GPU with 8GB+ VRAM recommended (works on CPU but slower)
+- CUDA or MPS (Apple Silicon) support
+- First run downloads ~1.7GB (1.7B model) or ~600MB (0.6B model)
+- Best for Google Colab with GPU runtime or local GPU
+
+**Available Variants:**
+1. **Custom Voice (qwen3_custom_voice)**: Pre-configured speakers like "Vivian", "Alice", "Bob" with optional emotion instructions
+2. **Voice Design (qwen3_voice_design)**: Custom voice generation using natural language descriptions
+3. **Base (qwen3_base)**: Voice cloning from 3+ seconds of reference audio
+
+**Example voice descriptions (Voice Design):**
+- "A young female voice, cheerful and energetic"
+- "A mature male voice, deep and authoritative"
+- "A warm female voice, calm and soothing"
+
+**Example voice cloning (Base):**
+- Provide 3+ seconds of clear reference audio
+- Transcribe the reference audio text
+- Generate new speech in the cloned voice
 
 ---
 
