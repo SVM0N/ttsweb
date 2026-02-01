@@ -1,0 +1,41 @@
+# Test Prompts for TTS
+
+## Short Test (Quick verification)
+Hello! This is a quick test of the text-to-speech system. How does it sound?
+
+## Medium Test (Natural conversation)
+Welcome to the TTS demo. I'm excited to show you what modern voice synthesis can do. The technology has advanced significantly, allowing for natural-sounding speech with proper intonation and rhythm. What do you think about the quality?
+
+## Long Test (Full demonstration)
+Greetings! I'm here to demonstrate the capabilities of this text-to-speech system. Modern TTS has made remarkable progress in recent years, moving from robotic monotone voices to natural, expressive speech that can convey emotion and nuance. This particular system supports multiple languages and offers various voice options, each with its own character and tone. Whether you need a professional narrator, a friendly conversational voice, or something more energetic and enthusiastic, there's likely an option that fits your needs. The quality you're hearing right now is generated entirely by artificial intelligence, synthesizing human-like speech from plain text input. Pretty impressive, isn't it?
+
+## Emotional Test (For Qwen3/Maya1)
+I'm so thrilled to share this amazing technology with you! It's absolutely wonderful how far voice synthesis has come. Just imagine the possibilities - audiobooks, accessibility tools, virtual assistants, and so much more. This is truly revolutionary, don't you think?
+
+## Technical Test (Numbers, punctuation, variety)
+Let's test various elements: numbers like 123, dates like January 15th 2026, questions? Exclamations! And of course, commas, semicolons; even parentheses (like this). The quick brown fox jumps over the lazy dog. Can you hear all the different sounds clearly?
+
+## Multilingual Test (For Qwen3)
+English: Hello, how are you today?
+Spanish: Hola, ¿cómo estás hoy?
+French: Bonjour, comment allez-vous aujourd'hui?
+German: Hallo, wie geht es dir heute?
+
+---
+
+RECOMMENDED PROMPTS BY USE CASE:
+
+For first test (Kokoro or Qwen3):
+→ Use "Short Test" or "Medium Test"
+
+For quality comparison:
+→ Use "Long Test" to hear full voice characteristics
+
+For emotional range (Qwen3 Custom Voice):
+→ Use "Emotional Test"
+
+For technical accuracy:
+→ Use "Technical Test"
+
+For multilingual (Qwen3 only):
+→ Use "Multilingual Test"
