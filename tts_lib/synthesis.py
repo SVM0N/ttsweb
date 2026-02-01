@@ -40,6 +40,11 @@ def _synthesize_with_backend(tts, elements, tts_model, voice, speed=1.0, **kwarg
         return tts.synthesize_text_to_wav(
             elements, voice=voice, **kwargs
         )
+    elif tts_model.startswith("qwen3"):
+        # Qwen3 uses voice parameter for both speaker names and descriptions
+        return tts.synthesize_text_to_wav(
+            elements, voice=voice, **kwargs
+        )
     else:  # Silero
         return tts.synthesize_text_to_wav(
             elements, speaker=voice, **kwargs

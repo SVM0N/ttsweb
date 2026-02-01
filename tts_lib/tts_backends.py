@@ -557,6 +557,199 @@ class SileroBackend(TTSBackend):
         return "xenia"
 
 
+class Qwen3TTSBackend(TTSBackend):
+    """TTS backend for Qwen3-TTS - Multilingual expressive TTS.
+
+    Features:
+    - 10 languages: Chinese, English, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian
+    - 3-second voice cloning capability
+    - Natural language voice descriptions (voice design)
+    - Multiple pre-configured custom voices
+    - Streaming support with 12kHz output
+    """
+
+    def __init__(self, device: Union[str, torch.device] = "auto", model_variant: str = "custom_voice"):
+        """Initialize Qwen3-TTS backend.
+
+        Args:
+            device: Device to use
+            model_variant: Model variant to use:
+                - "custom_voice": Pre-configured speakers with instruction control (1.7B)
+                - "voice_design": Custom voice generation via descriptions (1.7B)
+                - "base": Voice cloning capability (1.7B)
+                - "custom_voice_0.6b": Lightweight custom voice variant (0.6B)
+                - "base_0.6b": Compact cloning model (0.6B)
+        """
+        super().__init__(device)
+        self.model_variant = model_variant
+        self.model = None
+        self._load_model()
+
+    def _load_model(self):
+        """Load the Qwen3-TTS model."""
+        print(f"Loading Qwen3-TTS {self.model_variant} model...")
+        print("  This may take a few minutes on first run...")
+
+        try:
+            from qwen_tts import Qwen3TTSModel
+
+            # Map variant names to model IDs
+            model_map = {
+                "custom_voice": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+                "voice_design": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+                "base": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+                "custom_voice_0.6b": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
+                "base_0.6b": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+            }
+
+            model_id = model_map.get(self.model_variant, model_map["custom_voice"])
+
+            # Determine device and dtype
+            if self.device == "cuda" or (self.device == "auto" and torch.cuda.is_available()):
+                device_map = "cuda:0"
+                dtype = torch.bfloat16
+                attn_impl = "flash_attention_2"
+                print("  Using CUDA with Flash Attention 2")
+            elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                device_map = "mps"
+                dtype = torch.float16
+                attn_impl = "sdpa"  # scaled_dot_product_attention
+                print("  Using Apple MPS")
+            else:
+                device_map = "cpu"
+                dtype = torch.float32
+                attn_impl = "sdpa"
+                print("  Using CPU")
+
+            # Load model
+            try:
+                self.model = Qwen3TTSModel.from_pretrained(
+                    model_id,
+                    device_map=device_map,
+                    dtype=dtype,
+                    attn_implementation=attn_impl,
+                )
+                print(f"✓ Qwen3-TTS {self.model_variant} loaded successfully")
+                print(f"  Model: {model_id}")
+                print(f"  Sample rate: 12kHz")
+                print(f"  Supports: 10 languages, voice cloning, voice design")
+            except Exception as e:
+                # Fallback without flash attention if it fails
+                if attn_impl == "flash_attention_2":
+                    print(f"  Flash Attention 2 not available, falling back to SDPA...")
+                    self.model = Qwen3TTSModel.from_pretrained(
+                        model_id,
+                        device_map=device_map,
+                        dtype=dtype,
+                        attn_implementation="sdpa",
+                    )
+                    print(f"✓ Qwen3-TTS {self.model_variant} loaded successfully (SDPA)")
+                else:
+                    raise e
+
+        except ImportError as e:
+            print(f"✗ Failed to load Qwen3-TTS: {e}")
+            print("  Install with: pip install qwen-tts")
+            self.model = None
+        except Exception as e:
+            print(f"✗ Failed to load Qwen3-TTS model: {e}")
+            self.model = None
+
+    def synthesize_sentence(
+        self,
+        text: str,
+        voice: str = "Vivian",
+        language: str = "English",
+        instruct: Optional[str] = None,
+        ref_audio: Optional[str] = None,
+        ref_text: Optional[str] = None,
+        **kwargs
+    ) -> np.ndarray:
+        """Synthesize a sentence using Qwen3-TTS.
+
+        Args:
+            text: Text to synthesize
+            voice: Voice name (for custom_voice variant) or description (for voice_design variant)
+            language: Language of the text (English, Chinese, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian)
+            instruct: Optional emotional tone or style instruction
+            ref_audio: Path to reference audio for voice cloning (3+ seconds)
+            ref_text: Transcription of reference audio (required with ref_audio)
+
+        Returns:
+            Audio as numpy array
+        """
+        if self.model is None:
+            print("Warning: Qwen3-TTS model not loaded, returning silence")
+            return np.zeros((self.get_sample_rate() // 10,), dtype=np.float32)
+
+        try:
+            # Choose synthesis method based on variant and parameters
+            if ref_audio and ref_text:
+                # Voice cloning
+                wavs, sr = self.model.generate_voice_clone(
+                    text=text,
+                    language=language,
+                    ref_audio=ref_audio,
+                    ref_text=ref_text,
+                )
+            elif self.model_variant == "voice_design":
+                # Voice design with natural language description
+                wavs, sr = self.model.generate_voice_design(
+                    text=text,
+                    language=language,
+                    instruct=voice,  # Use voice parameter as description
+                )
+            else:
+                # Custom voice with predefined speakers
+                wavs, sr = self.model.generate_custom_voice(
+                    text=text,
+                    language=language,
+                    speaker=voice,
+                    instruct=instruct,
+                )
+
+            # Return first waveform
+            return wavs[0].astype(np.float32)
+
+        except Exception as e:
+            print(f"Error synthesizing sentence: {e}")
+            return np.zeros((self.get_sample_rate() // 10,), dtype=np.float32)
+
+    def get_sample_rate(self) -> int:
+        return 12000  # Qwen3-TTS uses 12kHz
+
+    def get_name(self) -> str:
+        return f"Qwen3-TTS ({self.model_variant})"
+
+    def get_available_voices(self) -> List[str]:
+        """Get available voices based on model variant."""
+        if self.model_variant == "voice_design":
+            # Return example voice descriptions for voice design
+            return [
+                "A young female voice, cheerful and energetic",
+                "A mature male voice, deep and authoritative",
+                "A warm female voice, calm and soothing",
+                "A young male voice, friendly and conversational",
+                "An elderly female voice, wise and gentle",
+            ]
+        else:
+            # Return predefined custom voices
+            # Note: Actual available speakers depend on the model
+            return [
+                "Vivian",  # Default English female
+                "Alice",   # English female
+                "Bob",     # English male
+                "Charlie", # English male
+                "Diana",   # English female
+            ]
+
+    def get_default_voice(self) -> str:
+        if self.model_variant == "voice_design":
+            return "A young female voice, cheerful and energetic"
+        else:
+            return "Vivian"
+
+
 def get_available_backends() -> Dict[str, type]:
     """Get a dictionary of all available TTS backends.
 
@@ -568,6 +761,9 @@ def get_available_backends() -> Dict[str, type]:
         "kokoro_1.0": lambda device: KokoroBackend(device=device, version="1.0"),
         "maya1": Maya1Backend,
         "silero_v5": SileroBackend,
+        "qwen3_custom_voice": lambda device: Qwen3TTSBackend(device=device, model_variant="custom_voice"),
+        "qwen3_voice_design": lambda device: Qwen3TTSBackend(device=device, model_variant="voice_design"),
+        "qwen3_base": lambda device: Qwen3TTSBackend(device=device, model_variant="base"),
     }
 
 
@@ -575,7 +771,7 @@ def create_backend(backend_name: str, device: Union[str, torch.device] = "auto")
     """Create a TTS backend by name.
 
     Args:
-        backend_name: Name of the backend ("kokoro_0.9", "kokoro_1.0", "maya1", "silero_v5")
+        backend_name: Name of the backend ("kokoro_0.9", "kokoro_1.0", "maya1", "silero_v5", "qwen3_custom_voice", "qwen3_voice_design", "qwen3_base")
         device: Device to use
 
     Returns:

@@ -112,6 +112,42 @@ def install_dependencies(
             install_package("omegaconf")
         print("✓ Silero loads via torch.hub (no additional packages needed)")
 
+    elif tts_model.startswith("qwen3"):
+        # Qwen3-TTS dependencies
+        qwen_packages = ["qwen-tts", "transformers"]
+        for pkg in qwen_packages:
+            try:
+                pkg_import = "qwen_tts" if pkg == "qwen-tts" else pkg
+                __import__(pkg_import)
+                print(f"✓ {pkg} already installed")
+            except ImportError:
+                install_package(pkg)
+
+        # Check for flash-attn (optional but recommended for GPU)
+        try:
+            import torch
+            if torch.cuda.is_available():
+                print("\n💡 Optional: Installing Flash Attention 2 for faster GPU inference...")
+                print("   This may take several minutes to compile...")
+                try:
+                    subprocess.check_call(
+                        [sys.executable, "-m", "pip", "install", "-q", "flash-attn", "--no-build-isolation"],
+                        stderr=subprocess.PIPE
+                    )
+                    print("✓ Flash Attention 2 installed")
+                except subprocess.CalledProcessError:
+                    print("⚠️  Flash Attention 2 installation failed (not critical)")
+                    print("   Model will use standard attention instead")
+        except Exception:
+            pass
+
+        print("\n⚠️  NOTE: Qwen3-TTS features:")
+        print("   - Supports 10 languages (Chinese, English, Japanese, Korean, etc.)")
+        print("   - 3-second voice cloning capability")
+        print("   - Natural language voice descriptions")
+        print("   - First run will download ~1.7GB or ~600MB model")
+        print("   - Recommended: GPU with 8GB+ VRAM for best performance")
+
     # PDF extractor dependencies
     if conversion_type == "pdf" and pdf_extractor:
         print("\n📄 Installing PDF extractor dependencies...")
