@@ -134,6 +134,7 @@ def print_menu(config: TTSConfig):
     print(f"5. Advanced settings (voice, speed, device)")
     print(f"6. {Colors.BOLD}Save current configuration{Colors.END}")
     print(f"7. {Colors.BOLD}Load saved configuration{Colors.END}")
+    print(f"8. Storage management (view & clean model caches)")
     print(f"0. Exit")
     print("-"*70)
     print_current_config_inline(config)
@@ -607,6 +608,82 @@ def configuration_menu(config: TTSConfig):
             print(f"{Colors.YELLOW}⚠️  Invalid choice. Please try again.{Colors.END}")
 
 
+def storage_management():
+    """Show cache sizes and offer cleanup options."""
+    from tts_lib.cleanup import list_cache_sizes, delete_cache, format_bytes
+
+    cache_display = {
+        "huggingface": "HuggingFace Cache",
+        "torch_hub": "Torch Hub",
+        "torch_checkpoints": "Torch Checkpoints",
+        "detectron2": "Detectron2",
+        "kokoro": "Kokoro Models",
+        "pip": "Pip Cache",
+    }
+
+    while True:
+        print("\n" + "="*70)
+        print("STORAGE MANAGEMENT")
+        print("="*70)
+
+        print("\nScanning caches...")
+        cache_info = list_cache_sizes()
+        total_size = 0
+
+        print()
+        entries = []
+        for i, (cache_name, display_name) in enumerate(cache_display.items(), 1):
+            exists, size, path = cache_info[cache_name]
+            if exists:
+                size_str = format_bytes(size)
+                print(f"  [{i}] {Colors.GREEN}✓{Colors.END} {display_name:28s} {Colors.BOLD}{size_str:>10s}{Colors.END}  {Colors.DIM}({path}){Colors.END}")
+                total_size += size
+            else:
+                print(f"  [{i}] {Colors.DIM}✗ {display_name:28s} {'not found':>10s}{Colors.END}")
+            entries.append(cache_name)
+
+        print()
+        print(f"  {'TOTAL':32s} {Colors.BOLD}{format_bytes(total_size):>10s}{Colors.END}")
+        print()
+        print("-"*70)
+        print("  [a] Delete ALL caches")
+        print("  [0] Back to main menu")
+        print("-"*70)
+
+        choice = input("\nEnter number to delete a cache, [a] for all, or [0] to go back: ").strip().lower()
+
+        if choice == "0":
+            break
+        elif choice == "a":
+            confirm = input(f"\n{Colors.YELLOW}WARNING: Delete ALL caches? Type 'yes' to confirm: {Colors.END}").strip().lower()
+            if confirm == "yes":
+                freed = 0
+                for cache_name in entries:
+                    exists, size, _ = cache_info[cache_name]
+                    if exists:
+                        delete_cache(cache_name)
+                        freed += size
+                print(f"\n{Colors.GREEN}✓ All caches deleted. Freed {format_bytes(freed)}.{Colors.END}")
+            else:
+                print("Cancelled.")
+        elif choice.isdigit() and 1 <= int(choice) <= len(entries):
+            cache_name = entries[int(choice) - 1]
+            exists, size, path = cache_info[cache_name]
+            display_name = cache_display[cache_name]
+            if not exists:
+                print(f"{Colors.YELLOW}Cache not found.{Colors.END}")
+                continue
+            confirm = input(f"\nDelete {display_name} ({format_bytes(size)})? Type 'yes' to confirm: ").strip().lower()
+            if confirm == "yes":
+                delete_cache(cache_name)
+            else:
+                print("Cancelled.")
+        else:
+            print(f"{Colors.YELLOW}Invalid choice.{Colors.END}")
+
+    input("\nPress Enter to continue...")
+
+
 def main():
     """Main CLI loop."""
     config = TTSConfig()
@@ -636,6 +713,8 @@ def main():
             save_configuration(config)
         elif choice == "7":
             load_configuration(config)
+        elif choice == "8":
+            storage_management()
         elif choice == "0":
             print(f"\n{Colors.CYAN}👋 Thank you for using TTS CLI!{Colors.END}")
             print(f"Visit {Colors.BLUE}https://svm0n.github.io/ttsweb/{Colors.END} to use the web player.\n")
