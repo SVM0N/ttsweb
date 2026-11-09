@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pdf-audio-player-v19';
+const CACHE_NAME = 'pdf-audio-player-v20';
 const urlsToCache = [
   './',
   './index.html',
@@ -27,7 +27,8 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          // Keep uploaded PDFs/audio/manifests in the separate user-files cache.
+          if (cacheName.startsWith('pdf-audio-player-v') && cacheName !== CACHE_NAME) {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }

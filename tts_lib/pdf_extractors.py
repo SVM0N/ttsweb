@@ -116,7 +116,10 @@ class UnstructuredExtractor(PDFExtractor):
 
             location_data = {
                 "page_number": current_page,
-                "points": points
+                "points": points,
+                "coordinate_width": (coords_meta or {}).get("layout_width"),
+                "coordinate_height": (coords_meta or {}).get("layout_height"),
+                "category": getattr(el, "category", None),
             }
 
             element_text = str(el).strip()
@@ -337,7 +340,10 @@ def get_available_extractors() -> Dict[str, PDFExtractor]:
     Returns:
         Dictionary mapping extractor names to extractor instances
     """
+    from .chandra_extractor import ChandraExtractor
+
     extractors = {
+        "chandra": ChandraExtractor(),
         "unstructured": UnstructuredExtractor(),
         "pymupdf": PyMuPDFExtractor(),
         "vision": VisionExtractor(),

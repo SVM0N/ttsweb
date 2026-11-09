@@ -419,8 +419,6 @@ transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 box-sizing: border-box;
 left: 0;
 width: 100%;
-padding-top: 6px;
-padding-bottom: 6px;
 }
 .page-badge {
 display: inline-flex;
@@ -1159,34 +1157,32 @@ const loc = sentence.location;
 if (!loc || !loc.page_number || !loc.points) return;
 const coords = loc.points;
 if (!Array.isArray(coords) || coords.length < 3 ||
-!Array.isArray(coords[0]) || coords[0].length < 2 ||
-!Array.isArray(coords[2]) || coords[2].length < 2) return;
-const y_min_raw = coords[0][1];
-const y_max_raw = coords[2][1];
-if (typeof y_min_raw !== 'number' || typeof y_max_raw !== 'number' || y_max_raw <= y_min_raw) return;
+!coords.every(p => Array.isArray(p) && p.length >= 2 &&
+Number.isFinite(p[0]) && Number.isFinite(p[1]))) return;
 const pageNum = loc.page_number;
 const overlay = document.getElementById(`highlight-overlay-${pageNum}`);
 const canvas = document.getElementById(`pdf-canvas-${pageNum}`);
 const pageViewport = pageViewports[pageNum];
 if (!overlay || !canvas || !pageViewport) return;
-// Use actual PDF page height (at scale 1.0) for correct normalization
-// Coordinates from PyMuPDF/unstructured are in PDF points (scale 1.0)
-const pdfPageHeight = pageViewport.height;
-const canvasHeight = canvas.height;
-// Normalize using actual page height, then scale to canvas
-const norm_y_min = y_min_raw / pdfPageHeight;
-const norm_y_max = y_max_raw / pdfPageHeight;
-const clamped_norm_y_min = Math.max(0, Math.min(1, norm_y_min));
-const clamped_norm_y_max = Math.max(0, Math.min(1, norm_y_max));
-let final_y = clamped_norm_y_min * canvasHeight;
-const final_height = (clamped_norm_y_max - clamped_norm_y_min) * canvasHeight;
-const offsetPixels = (highlightOffset / 100) * canvasHeight;
-final_y += offsetPixels;
-final_y = Math.max(0, Math.min(canvasHeight - final_height, final_y));
+// New manifests record coordinate dimensions (Unstructured uses image pixels).
+// Older manifests retain the PDF-point fallback. Percentages also handle CSS zoom.
+const sourceWidth = loc.coordinate_width ?? pageViewport.width;
+const sourceHeight = loc.coordinate_height ?? pageViewport.height;
+if (!Number.isFinite(sourceWidth) || !Number.isFinite(sourceHeight) ||
+sourceWidth <= 0 || sourceHeight <= 0) return;
+const clamp = v => Math.max(0, Math.min(1, v));
+const x0 = clamp(Math.min(...coords.map(p => p[0])) / sourceWidth);
+const x1 = clamp(Math.max(...coords.map(p => p[0])) / sourceWidth);
+const y0 = clamp(Math.min(...coords.map(p => p[1])) / sourceHeight);
+const y1 = clamp(Math.max(...coords.map(p => p[1])) / sourceHeight);
+if (x1 <= x0 || y1 <= y0) return;
+const top = Math.max(0, Math.min(1 - (y1 - y0), y0 + highlightOffset / 100));
 const box = document.createElement('div');
 box.className = 'highlight-box';
-box.style.top = `${final_y}px`;
-box.style.height = `${final_height}px`;
+box.style.left = `${x0 * 100}%`;
+box.style.width = `${(x1 - x0) * 100}%`;
+box.style.top = `${top * 100}%`;
+box.style.height = `${(y1 - y0) * 100}%`;
 overlay.appendChild(box);
 currentHighlight = box;
 }
@@ -1227,7 +1223,7 @@ orientationChangeTimeout = setTimeout(() => {
 console.log('Orientation changed');
 }, 100);
 });
-const APP_VERSION = 'v19';
+const APP_VERSION = 'v20';
 console.log(`✅ PDF Audio Player ${APP_VERSION} loaded with highlighter toggle!`);
 
 // Display version in UI
