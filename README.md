@@ -51,6 +51,10 @@ This project provides Jupyter notebooks that:
 4. Output as TXT, SRT subtitles, VTT captions, or JSON with word-level timestamps
 5. Automatic audio extraction from video files using ffmpeg
 
+For textbooks with columns and tables, the optional **Chandra OCR 2** extractor
+preserves layout blocks and prepares tables for narration. See [setup, hardware
+and comparison instructions](CHANDRA_USAGE.md).
+
 ## 🚀 Getting Started
 
 ### Text-to-Speech (TTS)
@@ -70,7 +74,7 @@ python3 tts_cli.py
 **Features:**
 - ✨ **Interactive menu**: Easy number-based navigation
 - 🎯 **7 TTS models**: Kokoro, Qwen3-TTS (3 variants), Maya1, Silero
-- 📄 **4 PDF extractors**: Choose based on your needs
+- 📄 **5 PDF extractors**: Choose based on your needs
 - 🚀 **Auto-install dependencies**: Only installs what you need
 - 💾 **No coding required**: Just follow the prompts
 - 🔄 **Full control**: Configure everything via menus

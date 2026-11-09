@@ -96,6 +96,7 @@ def get_extractor_display_name(extractor_key):
     """Get display name for PDF extractor."""
     names = {
         "unstructured": "Unstructured",
+        "chandra": "Chandra OCR 2",
         "pymupdf": "PyMuPDF",
         "vision": "Vision",
         "nougat": "Nougat",
@@ -237,6 +238,7 @@ def select_pdf_extractor(config: TTSConfig):
         ("2", "pymupdf", "PyMuPDF (fast, for clean PDFs)"),
         ("3", "vision", "Apple Vision (OCR for scanned PDFs, macOS only)"),
         ("4", "nougat", "Nougat (academic papers with equations)"),
+        ("5", "chandra", "Chandra OCR 2 (textbooks, columns and tables; GPU/server)"),
     ]
 
     for num, key, desc in extractors:
@@ -244,7 +246,7 @@ def select_pdf_extractor(config: TTSConfig):
         print(f"{num}. {desc}{indicator}")
     print("0. Cancel")
 
-    choice = input("\nEnter choice [1-4]: ").strip()
+    choice = input("\nEnter choice [1-5]: ").strip()
 
     extractor_map = {e[0]: (e[1], e[2].split(' (')[0]) for e in extractors}
 

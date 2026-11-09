@@ -26,7 +26,7 @@ def install_dependencies(
 
     Args:
         tts_model: TTS model name ("kokoro_0.9", "kokoro_1.0", "maya1", "silero_v5")
-        pdf_extractor: PDF extractor name ("unstructured", "pymupdf", "vision", "nougat", None)
+        pdf_extractor: PDF extractor name ("unstructured", "pymupdf", "vision", "nougat", "chandra", None)
         conversion_type: Type of conversion ("string", "pdf", "epub")
         out_format: Output format ("wav" or "mp3")
     """
@@ -197,6 +197,17 @@ def install_dependencies(
                     print(f"   ⚠️  Error during smart detection: {e}")
                     print(f"   → Falling back to standard installation...")
                     install_package("git+https://github.com/facebookresearch/detectron2.git@v0.6")
+
+        elif pdf_extractor == "chandra":
+            import os
+            method = os.environ.get("TTS_CHANDRA_METHOD", "hf")
+            if method not in {"hf", "vllm"}:
+                raise ValueError("TTS_CHANDRA_METHOD must be 'hf' or 'vllm'")
+            install_package("chandra-ocr[hf]" if method == "hf" else "chandra-ocr")
+            install_package("pymupdf")
+            install_package("beautifulsoup4")
+            print("Chandra: local HF weights need GPU memory; vLLM requires a running server.")
+            print("See CHANDRA_USAGE.md. No Detectron2 installation is needed for this extractor.")
 
         elif pdf_extractor == "pymupdf":
             try:
